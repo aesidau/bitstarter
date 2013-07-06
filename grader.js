@@ -44,13 +44,13 @@ var assertFileExists = function(infile)
 var assertIsURL = function(testurl)
 {
   var parsed = url.parse(testurl);
-  if (!parsed.host || parsed.host == "")
+  if (!parsed.host || parsed.host === "")
   {
     console.log("%s not valid URL. Exiting.", testurl);
     process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
   }
   return testurl;
-}
+};
 
 var cheerioHtmlFile = function(htmlfile)
 {
@@ -78,7 +78,7 @@ var checkHtmlFile = function(htmlfile, checksfile)
 var checkHtmlURL = function(htmlurl, checksfile)
 {
   return {};
-}
+};
 
 var clone = function(fn)
 {
