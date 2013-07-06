@@ -22,10 +22,13 @@ References:
 */
 
 var fs = require('fs');
+var url = require('url');
 var program = require('commander');
 var cheerio = require('cheerio');
+var restler = require('restler');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
+var URL_DEFAULT = "";
 
 var assertFileExists = function(infile)
 {
@@ -37,6 +40,17 @@ var assertFileExists = function(infile)
   }
   return instr;
 };
+
+var assertIsURL = function(testurl)
+{
+  var parsed = url.parse(testurl);
+  if (!parsed.host || parsed.host == "")
+  {
+    console.log("%s not valid URL. Exiting.", testurl);
+    process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
+  }
+  return testurl;
+}
 
 var cheerioHtmlFile = function(htmlfile)
 {
@@ -61,6 +75,11 @@ var checkHtmlFile = function(htmlfile, checksfile)
   return out;
 };
 
+var checkHtmlURL = function(htmlurl, checksfile)
+{
+  return {};
+}
+
 var clone = function(fn)
 {
   // Workaround for commander.js issue.
@@ -72,9 +91,17 @@ if (require.main == module)
 {
   program
     .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
-    .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+    .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists))
+    .option('-u, --url <web_link>', 'URL to index.html', clone(assertIsURL))
     .parse(process.argv);
-  var checkJson = checkHtmlFile(program.file, program.checks);
+  var checkJson;
+  if (!program.url)
+  {
+    checkJson = checkHtmlFile(program.file || HTMLFILE_DEFAULT, program.checks);
+  } else
+  {
+    checkJson = checkHtmlURL(program.url, program.checks);
+  }
   var outJson = JSON.stringify(checkJson, null, 4);
   console.log(outJson);
 } else
