@@ -52,9 +52,14 @@ var assertIsURL = function(testurl)
   return testurl;
 };
 
+var cheerioHtmlString = function(htmlstring)
+{
+  return cheerio.load(htmlstring);
+};
+
 var cheerioHtmlFile = function(htmlfile)
 {
-  return cheerio.load(fs.readFileSync(htmlfile));
+  return cheerioHtmlString(fs.readFileSync(htmlfile));
 };
 
 var loadChecks = function(checksfile)
@@ -75,9 +80,27 @@ var checkHtmlFile = function(htmlfile, checksfile)
   return out;
 };
 
-var checkHtmlURL = function(htmlurl, checksfile)
+var checkHtmlURL = function(htmlurl, checksfile, outfn)
 {
-  return {};
+  restler.get(htmlurl)
+    .on('complete', function(result) {
+      if (result instanceof Error)
+      {
+        console.log("Error with URL %s: %s", htmlurl, result.message);
+        process.exit(1); // http://nodejs.org/api/process.html#process_process_exit_code
+      } else
+      {
+	$ = cheerioHtmlString(result.toString());
+        var checks = loadChecks(checksfile).sort();
+        var out = {};
+        for (var ii in checks)
+        {
+          var present = $(checks[ii]).length > 0;
+          out[checks[ii]] = present;
+        }
+	outfn(out);
+      }
+    }); 
 };
 
 var clone = function(fn)
@@ -98,12 +121,16 @@ if (require.main == module)
   if (!program.url)
   {
     checkJson = checkHtmlFile(program.file || HTMLFILE_DEFAULT, program.checks);
+    var outJson = JSON.stringify(checkJson, null, 4);
+    console.log(outJson);
   } else
   {
-    checkJson = checkHtmlURL(program.url, program.checks);
+    checkJson = checkHtmlURL(program.url, program.checks, function(checkJson)
+    {
+      var outJson = JSON.stringify(checkJson, null, 4);
+      console.log(outJson);
+    });
   }
-  var outJson = JSON.stringify(checkJson, null, 4);
-  console.log(outJson);
 } else
 {
   exports.checkHtmlFile = checkHtmlFile;
