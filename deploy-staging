@@ -1,0 +1,1 @@
+git checkout staging && git push staging-heroku staging:master
